@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<title>搜狗地图动态跟踪/轨迹回放</title>
+<style type="text/css">
+html{height:100%}
+body{height:100%;margin:0px;padding:0px}
+#map_canvas{height:100%}
+</style>
+<script type="text/javascript" src="http://api.go2map.com/maps/js/api_v2.0.js"></script>
+<script type="text/javascript">
+  var map;
+  var traceMaker;
+  var traceName;
+  var poly;
+  var path;
+  var polyOptions;
+  var first = true;
+  
+  function initialize() {
+    if (typeof(sogou) == "undefined") {
+	    alert("载入地图失败,请确认计算机是否已连接到互联网");
+	    return;
+	}
+    myPoint = new sogou.maps.Point(12952867,4820730);
+    var myOptions = {
+        'zoom': 12,
+        'center': myPoint,
+        mapControl: true,
+        // 可以通过mapControlType参数来控制控件的样式。
+        // 1 完整样式。
+        // 2 去掉滑动条，只有加减按钮、漫游箭头和地图类型控制。
+        // 3 只有加减按钮、地图类型控制（居右上角）。
+        // 4 只有加减按钮。
+        // 5 只有地图类型控制（居右上角）。
+        mapControlType: 3,
+        //关闭比例尺控件
+        scaleControl: false,
+        'mapTypeId': sogou.maps.MapTypeId.ROADMAP
+    }
+    map = new sogou.maps.Map(document.getElementById("map_canvas"), myOptions);
+    
+    polyOptions = {
+		strokeColor: '#3333cc',
+		strokeOpacity: 1.0,
+		strokeWeight: 4
+	}
+	poly = new sogou.maps.Polyline(polyOptions);
+	poly.setMap(map);
+  }
+  
+  
+  function makeTraceMarker(longitude, latitude, iconWidth, iconHeigth, iconUrl, markTitle) {
+        if (typeof(sogou) == "undefined") {
+            alert("载入地图失败,请确认计算机是否已连接到互联网\n如果已经连接到互联网,请重新打开跟踪窗口");
+            return;
+        }
+	    var markPoint = new sogou.maps.Point(longitude, latitude);
+	   
+	    var image = new sogou.maps.MarkerImage(iconUrl,
+			new sogou.maps.Size(iconWidth, iconHeigth),
+			// 原点在图片左上角，设为(0,0)
+			new sogou.maps.Point(0,0),
+			// 锚点在小旗的旗杆脚上，相对图标左上角位置为(0,32)
+			new sogou.maps.Point((iconWidth / 2), (iconHeigth / 2)),
+			new sogou.maps.Size(iconWidth, iconHeigth));
+		var markerOpt = {
+			icon:image, // 设置标记的图标
+			label:{visible:true,align:"BOTTOM"},  // Label 的属性
+			title : markTitle,
+			position : markPoint, // 标记位置，必填
+			map : map, // 显示标记的地图
+			zIndex:0 // 叠加顺序
+		};
+		
+		traceMarker = new sogou.maps.Marker(markerOpt);
+		map.setCenter(markPoint);
+	}
+	
+    function setMarkInfo(id, name, longitude, latitude) {
+        if (poly != undefined) { // 如果路线不为空，则删除并新建路线。应用于重新选择时间段来回放
+            poly.setMap(null);
+            delete poly;
+    	    
+	        poly = new sogou.maps.Polyline(polyOptions);
+	        poly.setMap(map);
+    	    
+	        path = null
+	    }
+	    
+	    if (!first) { // 如果已经存在标志，则返回，否则新建标志
+            return;            
+        } else {
+            makeTraceMarker(longitude, latitude, 60, 60,
+                            'http://hiphotos.baidu.com/liuyun885/pic/item/c5e6c04e78f0f7367eec8f4b0a55b319eac413ea.jpg',
+                            name);
+            first = false;
+        }
+    }
+	
+	function moveTraceMarker(id, longitude, latitude) {
+	  if (typeof(traceMarker) == 'undefined') {
+	        if (bIsCustomBrowser) {
+	            window.external.CB_CreateTraceMarker(id); //如果地图动态跟踪的标注还没有被创建，则调用VC的函数来进行标注
+	        }
+	        return;
+	    }
+	    
+	    var point = traceMarker.getPosition();
+	    if (point.x == longitude && point.y == latitude) {
+	        return;
+	    }
+	    point = new sogou.maps.Point(longitude, latitude);
+	    traceMarker.setPosition(point);
+	    
+	    var path = poly.getPath()||[];
+		//将位置坐标添加到多边形节点
+		path.push(point);
+		poly.setPath(path);
+		
+	    map.setCenter(point);
+	}
+	
+	function moveTraceMarkerPlayback(name, time, speed, longitude, latitude) {
+	    if (!traceMarker) {
+	        return;
+	    }
+	    
+	    point = new sogou.maps.Point(longitude, latitude);
+	    traceMarker.setPosition(point);
+	    
+	    var title = "车辆名称:" + name + "<br />时间:" + time + "<br />速度:" + speed + "<br />经度:" + longitude + "<br />纬度:" + latitude;
+	    traceMarker.setTitle(title);
+	    
+	    path = poly.getPath()||[];
+		//将位置坐标添加到多边形节点
+		path.push(point);
+		poly.setPath(path);
+		
+	    map.setCenter(point);
+	}
+	
+	function replay() {
+	    poly.setMap(null);
+	    
+	    poly = new sogou.maps.Polyline(polyOptions);
+	    poly.setMap(map);
+	    
+	    path = null;
+	}
+	
+	function fnIsOurCustomBrowser()
+	{
+		if(window.external.CB_IsOurCustomBrowser != null)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	// 用一个变量检验是否是自定义浏览器.
+	bIsCustomBrowser = fnIsOurCustomBrowser();
+	
+</script>
+</head>
+<body onload="initialize()">
+  <div id="map_canvas"></div>
+</body>
+</html>

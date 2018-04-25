@@ -1,0 +1,122 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: CarManage - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPD1.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR"Debug/" /Fp"Debug/CarManage.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\±à³Ì\CarManage\TargetOpt.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPD1.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPD2.tmp" with contents
+[
+/nologo /subsystem:windows /incremental:yes /pdb:"Debug/CarManage.pdb" /debug /machine:I386 /out:"Debug/CarManage.exe" /pdbtype:sept 
+".\Debug\ADOConn.obj"
+".\Debug\CarDataDlg.obj"
+".\Debug\CarInfo.obj"
+".\Debug\CarManage.obj"
+".\Debug\CarManageDoc.obj"
+".\Debug\CarManageView.obj"
+".\Debug\CarOpt.obj"
+".\Debug\CustomControlSite.obj"
+".\Debug\DeptOpt.obj"
+".\Debug\DriverOpt.obj"
+".\Debug\dtpicker.obj"
+".\Debug\EditCarDataDlg.obj"
+".\Debug\EditTargetDlg.obj"
+".\Debug\font.obj"
+".\Debug\GpsDlg.obj"
+".\Debug\ImpIDispatch.obj"
+".\Debug\InOutDlg.obj"
+".\Debug\InOutOpt.obj"
+".\Debug\LogDlg.obj"
+".\Debug\MainFrm.obj"
+".\Debug\ManageCarDlg.obj"
+".\Debug\MapDlg.obj"
+".\Debug\MD5Checksum.obj"
+".\Debug\MyTabCtrl.obj"
+".\Debug\NewRoleDlg.obj"
+".\Debug\NewUserDlg.obj"
+".\Debug\picture.obj"
+".\Debug\PlayBackDlg.obj"
+".\Debug\RoleManageDlg.obj"
+".\Debug\RoleOpt.obj"
+".\Debug\SizingDialog.obj"
+".\Debug\SizingSP.obj"
+".\Debug\StdAfx.obj"
+".\Debug\TargetOpt.obj"
+".\Debug\TeamOpt.obj"
+".\Debug\TMDlg.obj"
+".\Debug\TraceDlg.obj"
+".\Debug\UserOpt.obj"
+".\Debug\webbrowser2.obj"
+".\Debug\WebPage.obj"
+".\Debug\XCListCtrl.obj"
+".\Debug\XComboBox.obj"
+".\Debug\CarManage.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPD2.tmp"
+<h3>Output Window</h3>
+Compiling...
+TargetOpt.cpp
+Linking...
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPD3.tmp" with contents
+[
+/nologo /o"Debug/CarManage.bsc" 
+".\Debug\StdAfx.sbr"
+".\Debug\ADOConn.sbr"
+".\Debug\CarDataDlg.sbr"
+".\Debug\CarInfo.sbr"
+".\Debug\CarManage.sbr"
+".\Debug\CarManageDoc.sbr"
+".\Debug\CarManageView.sbr"
+".\Debug\CarOpt.sbr"
+".\Debug\CustomControlSite.sbr"
+".\Debug\DeptOpt.sbr"
+".\Debug\DriverOpt.sbr"
+".\Debug\dtpicker.sbr"
+".\Debug\EditCarDataDlg.sbr"
+".\Debug\EditTargetDlg.sbr"
+".\Debug\font.sbr"
+".\Debug\GpsDlg.sbr"
+".\Debug\ImpIDispatch.sbr"
+".\Debug\InOutDlg.sbr"
+".\Debug\InOutOpt.sbr"
+".\Debug\LogDlg.sbr"
+".\Debug\MainFrm.sbr"
+".\Debug\ManageCarDlg.sbr"
+".\Debug\MapDlg.sbr"
+".\Debug\MD5Checksum.sbr"
+".\Debug\MyTabCtrl.sbr"
+".\Debug\NewRoleDlg.sbr"
+".\Debug\NewUserDlg.sbr"
+".\Debug\picture.sbr"
+".\Debug\PlayBackDlg.sbr"
+".\Debug\RoleManageDlg.sbr"
+".\Debug\RoleOpt.sbr"
+".\Debug\SizingDialog.sbr"
+".\Debug\SizingSP.sbr"
+".\Debug\TargetOpt.sbr"
+".\Debug\TeamOpt.sbr"
+".\Debug\TMDlg.sbr"
+".\Debug\TraceDlg.sbr"
+".\Debug\UserOpt.sbr"
+".\Debug\webbrowser2.sbr"
+".\Debug\WebPage.sbr"
+".\Debug\XCListCtrl.sbr"
+".\Debug\XComboBox.sbr"]
+Creating command line "bscmake.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPD3.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+CarManage.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

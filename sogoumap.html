@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta http-equiv="content-type" content="text/html; charset=gb2312"/>
+<title>搜狗地图</title>
+<style type="text/css">
+	html {height: auto;}
+	body {height: auto;margin: 0;padding: 0;}
+	#map_canvas {width:800px;height: 600px;position: absolute;}
+	#mark_canvas{visibility : hidden;}
+
+	<!-- 右键菜单风格 --> 
+	#container {
+            text-align : center;
+            width : 500px;
+            height : 500px;
+            border : 1px solid blue;
+            margin : 0 auto;
+             
+        }
+        .skin {
+            width : 100px;
+            border : 1px solid gray;
+            padding : 2px;
+            visibility : hidden;
+            position : absolute;
+			background-color : #d6d8da; <!--透明为#d68da;-->
+        }
+        div.menuitems {
+            margin : 1px 0;
+        }
+        div.menuitems a {
+            text-decoration : none;
+        }
+        div.menuitems:hover {
+            background-color : #a0a0a0;
+        }
+</style>
+<script type="text/javascript" src="http://api.go2map.com/maps/js/api_v2.0.js"></script>
+<script type="text/javascript">
+	/**
+	* 加载指定城市区域的地图
+	*/
+	var map;
+	var poly;
+	var mouseREvt;
+	var drawEvt;
+	var mapClick;
+	var curSelectMarkerId; // 当前选中的Marker
+	var infowindow; // 信息提示窗口
+	var infoMarker; // 信息提示窗口的MARKER
+	var drawing = false; // 标志是否正在画
+
+	<!-- 保存搜索结果 -->
+	var sRender;
+	
+	///////////////////////////////////////////地图初始化////////////////////////////////////////////////////////
+	function initialize() {
+	    if (typeof(sogou) == "undefined") {
+		    alert("载入地图失败,请确认计算机是否已连接到互联网");
+		    return;
+		}
+		
+		var myPoint = new sogou.maps.Point(12956656.25,4825000);
+		var myOptions = {
+		  'zoom': 15,
+		  'center': myPoint,
+		  'mapTypeId': sogou.maps.MapTypeId.TERRAIN
+		};
+		
+		sRender = new sogou.maps.SearchRenderer({'panel':document.getElementById('result')});
+		map = new sogou.maps.Map(document.getElementById("map_canvas"), myOptions);
+		
+		infowindow = new sogou.maps.InfoWindow(); // 建立一个信息窗口，整个地图共用一个信息窗口
+		
+		mapClick = sogou.maps.event.addListener(map, 'click', onMapClick); // 添加在地图上的单击事件
+	
+		if(bIsCustomBrowser)
+		{
+			window.external.CB_CreateTargetMarker(); // 地图初始化结束，调用VC的函数在地图上添加车辆标注
+		}
+		
+		initMenu();
+	}
+	///////////////////////////////////////////初始化结束////////////////////////////////////////////////////////
+        
+	function mySetCenter(x,y) {
+		var location = new sogou.maps.Point(x,y);
+		var marker = new sogou.maps.Marker({
+			position: location,
+			map:map
+		});
+		map.setCenter(location);
+	}
+
+	function myClear() {
+		sRender.clearResultFeatures();
+	}
+
+    // 在地图上单击鼠标
+    function onMapClick() {
+        if (infoMarker) {
+	        infoMarker.setMap(null); // 删除信息标志
+	        infoMarker = null;
+	    }
+	    if (infowindow) {
+	        infowindow.close();
+	      //  infowindow = null;
+	    }
+    }
+    
+    // 通过名称来搜索地点
+	function onSearchByName(str) {
+		var request={
+			   'map':map,
+			   'what':{
+				   'keyword':str
+			   }
+		  };
+		var search=new sogou.maps.Search();<!-- 创建搜索实例 -->
+		search.search(request);
+		search.setRenderer(sRender);
+	}
+	
+    ///////////////////////////////////////////右键菜单////////////////////////////////////////////////////////
+	function initMenu() {
+		var container = document.getElementById('map_canvas');   
+		var menu = document.getElementById('menu');
+		
+		/*显示菜单*/
+		function showMenu(event) {    	    		    
+			var evt = window.event || arguments[0];
+			mouseREvt = event;
+			/*获取当前鼠标右键按下后的位置，据此定义菜单显示的位置*/
+			var rightedge = container.clientWidth-evt.clientX;
+			var bottomedge = container.clientHeight-evt.clientY;
+
+			/*如果从鼠标位置到容器右边的空间小于菜单的宽度，就定位菜单的左坐标（Left）为当前鼠标位置
+
+	向左一个菜单宽度*/
+			if (rightedge < menu.offsetWidth)                
+				menu.style.left = container.scrollLeft + evt.clientX - menu.offsetWidth + "px";       
+
+  
+			else
+			/*否则，就定位菜单的左坐标为当前鼠标位置*/
+				menu.style.left = container.scrollLeft + evt.clientX + "px";
+     
+			/*如果从鼠标位置到容器下边的空间小于菜单的高度，就定位菜单的上坐标（Top）为当前鼠标位置向
+
+	上一个菜单高度*/
+			if (bottomedge < menu.offsetHeight)
+				menu.style.top = container.scrollTop + evt.clientY - menu.offsetHeight + "px";
+			else
+			/*否则，就定位菜单的上坐标为当前鼠标位置*/
+				menu.style.top = container.scrollTop + evt.clientY + "px";
+         
+			/*设置菜单可见*/
+			menu.style.visibility = "visible";              
+			sogou.maps.event.addListener(menu,"contextmenu",sogou.maps.event.cancelBubble);
+		}
+
+	   	sogou.maps.event.addListener(map, "rightclick", showMenu);
+		document.onclick = hideMenu; /* 鼠标左键隐藏菜单 */  
+		
+		/*隐藏菜单*/
+	    function hideMenu() {
+		    menu.style.visibility = 'hidden';
+	    }              
+	}
+	///////////////////////////////////////////右键菜单结束////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////添加标注////////////////////////////////////////////////////////
+    // 响应右键菜单的“地图标注”事件
+    var infoContent;
+    var markerName;
+    var longitude;
+    var latitude;
+	function onMarkPoint() {
+	    onMapClick(); // 无论如何，先把地图上信息窗和信息窗的Marker去掉再说，免得地图上有多余的标志
+	    
+        
+        // 获取要在信息窗中显示的信息的DIV
+        if (typeof(infoContent) == "undefined") {
+            infoContent = document.getElementById("mark_canvas");
+            markerName = document.getElementById("markPointText");
+            longitude = document.getElementById("markPointX");
+            latitude = document.getElementById("markPointY");
+        }
+        infoContent.style.visibility = "visible";
+        // 设置信息窗中输入框的默认值
+        markerName.value = "未命名";
+        longitude.value = mouseREvt.point.x;
+        latitude.value = mouseREvt.point.y;
+		                 
+		infoMarker = new sogou.maps.Marker({ // 建立一个用于显示信息窗口的MARKER
+	        position: mouseREvt.point,
+            map:map,
+            //设置信息窗上方标题栏的文字
+            title: '标注信息'
+        });
+ 
+        infowindow.open(map, infoMarker);
+        infowindow.setContent(infoContent);
+	}
+	
+	// 标注点
+	function onMark() {
+	    var pointX = (document.getElementById("markPointX")).value;
+	    var pointY = (document.getElementById("markPointY")).value;
+
+        // 调用myMarker,添加一个标注
+		var marker = myMarker(pointX, pointY, 60, 60,
+                  "http://hiphotos.baidu.com/liuyun885/pic/item/c5e6c04e78f0f7367eec8f4b0a55b319eac413ea.jpg",
+                  (document.getElementById("markPointText")).value, 'id00001');
+                  
+        map.setCenter(marker.getPosition()); // 设置标注为地图中心
+		infoMarker.setMap(null); // 删除信息标志
+		sogou.maps.event.addListener(marker, 'click', onMarkClick); // 给该标注添加单击事件
+	}
+	
+	// 单击标注事件
+	function onMarkClick() {
+	    if (infoMarker) {
+	        infoMarker.setMap(null);
+	    }
+	    
+	    infowindow.open(map, this);
+	    
+	    var contentString = '<div style="background-color:#DFDFDF"><label>标注名称:</label><input type="text" value=' + this.getTitle() + ' /><br/><br/> ' + 
+	                            '&nbsp&nbsp' +'<input type="button" onclick="javascript:onSavePoly()" value="保存"/>' + 
+	                            '&nbsp' + '<input type="button" onclick="javascript:onDeleteMarker()" value="删除该标注"/>' +
+ 	                            '&nbsp' + '<input type="button" onclick="javascript:cancel()" value="取消"/></div>';
+        infowindow.setContent(contentString);
+        infowindow.setTitle("我的标注");
+    }
+	///////////////////////////////////////////添加标注结束///////////////////////////////////////////////////////
+ 
+    ///////////////////////////////////////////画线////////////////////////////////////////////////////////
+    // 画折线
+    function onDrawLine() {
+        if (drawing == true) {
+            return;
+        }
+        
+		lastPoint = null; // 重新标志最后的一点
+		drawing = true; // 画线开始
+		
+		var polyOptions = {
+			strokeColor: '#3333cc',
+			strokeOpacity: 1.0,
+			strokeWeight: 4
+		}
+		poly = new sogou.maps.Polyline(polyOptions);
+		poly.setMap(map);
+
+        sogou.maps.event.removeListener(mapClick); // 删除监听地图单击的事件
+		drawEvt = sogou.maps.event.addListener(map, 'click', addLatLng); // 添加画线单击事件
+	}
+	
+	// 画折线时，当鼠标点击地图，把鼠标点击的位置加入到线中
+	var lastPoint;
+    function addLatLng(event) {
+        if (infoMarker) {  // 如果信息窗口的Marker不为空，从地图上删除之
+            infoMarker.setMap(null);
+        }
+		var path = poly.getPath()||[];
+		//将点击位置的左边添加到多边形节点
+		path.push(event.point);
+		poly.setPath(path);
+		
+		lastPoint = event.point;
+	}
+	
+	// 结束绘制
+	function onEndDraw() {
+	    if (drawing == false) { // 如果没有正在画线，立即返回
+	        return;
+        }
+        
+        if (lastPoint == null) { // 如果地图上什么都没有画，立即返回
+            return;
+        }
+        
+        if (infowindow) {
+            infowindow.close(); // 如果有信息窗口已打开，则关闭信息窗口，用于下面的显示提示信息
+        }
+        
+		sogou.maps.event.removeListener(drawEvt); // 取消对地图click事件的监听
+		mapClick = sogou.maps.event.addListener(map, 'click', onMapClick); // 添加地图单击事件
+		
+		if (drawPolygon == true) { // 如果当前绘制的是多边形
+		    polygon.setPath(poly.getPath());
+		    polygon.setMap(map);
+		    poly.setMap(null);
+		    
+		    var contentString = '<div style="background-color:#DFDFDF"><p>是否保存刚才所绘制的区域</p>' + '&nbsp&nbsp&nbsp&nbsp&nbsp' +
+	                            '<input type="button" onclick="javascript:onSavePoly()" value="保存">' + 
+	                            '&nbsp&nbsp' + '<input type="button" onclick="javascript:cancel()" value="不保存"></div>';
+            drawPolygon = false; // 取消绘制多边形
+		} else { // 如果当前绘制的是折线
+		    sogou.maps.event.addListener(poly, 'click', showInfoWndOnPoly); // 添加点击折线事件
+    		
+		    var contentString = '<div style="background-color:#DFDFDF"><p>是否保存刚才所绘制的路线</p>' + '&nbsp&nbsp&nbsp&nbsp' +
+	                            '<input type="button" onclick="javascript:onSavePoly()" value="保存">' + 
+	                            '&nbsp&nbsp' + '<input type="button" onclick="javascript:cancel()" value="不保存"></div>';
+        }
+        
+	    infoMarker = myMarkerForInfo(lastPoint.x, lastPoint.y, 20, 20,
+                              "http://hiphotos.baidu.com/liuyun885/pic/item/c3c9121273f08202f8a1b9744bfbfbedaa641bc9.jpg",
+                              "信息提示");
+        infowindow.open(map, infoMarker);
+        infowindow.setContent(contentString);
+        
+        drawing = false; // 绘制结束
+	}
+	
+	// 点击折线时的事件
+	var curSelPoly;
+	function showInfoWndOnPoly(event) {
+	    if (drawing == true) {
+	        return
+        }
+        curSelPoly = this;
+	                             
+        infoMarker = myMarkerForInfo(event.point.x, event.point.y, 20, 20,
+                              "http://hiphotos.baidu.com/liuyun885/pic/item/c3c9121273f08202f8a1b9744bfbfbedaa641bc9.jpg",
+                              "信息提示");
+        
+        var contentString = '<div style="background-color:#DFDFDF"><p>请选择对该折线的操作</p>' +
+	                        '&nbsp&nbsp&nbsp&nbsp&nbsp' + '<a href="javascript:onRemovePoly()">删除</a>' +
+	                        '&nbsp&nbsp' + '<a href="javascript:cancel()">取消</a></div>';                                      
+        infowindow.open(map, infoMarker);
+	    infowindow.setContent(contentString);   
+	}
+	
+	// 删除折线
+	function onRemovePoly() {
+	    curSelPoly.setMap(null);
+	    infoMarker.setMap(null);
+	}
+	
+	// 取消
+	function cancel() {
+	    infoMarker.setMap(null);
+    }
+    
+	///////////////////////////////////////////画线结束////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////绘制多边形////////////////////////////////////////////////////////
+	var polygon; // 保存多边形
+	var drawPolygon;
+	
+	function onDrawPolygon() {	    
+	    if (drawing == true) {
+	        return
+	    }
+        
+        lastPoint = null; // 重新标志最后的一点
+	    drawPolygon = true;
+	    
+	    polygon = new sogou.maps.Polygon({
+	        strokeColor:"#FF0000",
+	        strokeOpacity:0.8,
+	        storkeWeitht:2,
+	        fillColor:"#ff0000",
+	        fillOpacity:0.35
+	    });
+	    
+	    onDrawLine();
+    }
+    
+    function drawPolygonEvt(event) {
+        var path = poly.getPath()||[];
+		//将点击位置的左边添加到多边形节点
+		path.push(event.point);
+		polygon.setPath(path);
+    }
+	///////////////////////////////////////////绘制多边形结束////////////////////////////////////////////////////////
+	
+	// 信息窗口的标志
+	// pointX:标注的经度
+	// pointY:标注的纬度
+	// iconWidth:标注图标的宽度
+	// iconHeigth:标注图标的高度
+	// iconUrl:标注图标的URL
+	// markTitle:标注信息窗标题
+	function myMarkerForInfo(pointX, pointY, iconWidth, iconHeigth, iconUrl, markTitle) {
+	    var markPoint = new sogou.maps.Point(pointX, pointY);
+	   
+	    var image = new sogou.maps.MarkerImage(iconUrl,
+	 		// 标记图标宽20像素，高32像素
+			new sogou.maps.Size(iconWidth, iconHeigth),
+			// 原点在图片左上角，设为(0,0)
+			new sogou.maps.Point(0,0),
+			// 锚点在小旗的旗杆脚上，相对图标左上角位置为(0,32)
+			new sogou.maps.Point((iconWidth / 2), (iconHeigth / 2)),
+			new sogou.maps.Size(iconWidth, iconHeigth));
+		var markerOpt = {
+			icon:image, // 设置标记的图标
+			title : markTitle,
+			position : markPoint, // 标记位置，必填
+			map : map, // 显示标记的地图
+			zIndex:0 // 叠加顺序
+		};
+		
+		var marker = new sogou.maps.Marker(markerOpt);
+		
+		return marker;
+	}
+	
+	// 创建在地图上显示的标志
+	function myMarker(pointX, pointY, iconWidth, iconHeigth, iconUrl, markTitle, markerID) {
+	    var markPoint = new sogou.maps.Point(pointX, pointY);
+	   
+	    var image = new sogou.maps.MarkerImage(iconUrl,
+	 		// 标记图标宽20像素，高32像素
+			new sogou.maps.Size(iconWidth, iconHeigth),
+			// 原点在图片左上角，设为(0,0)
+			new sogou.maps.Point(0,0),
+			// 锚点在小旗的旗杆脚上，相对图标左上角位置为(0,32)
+			new sogou.maps.Point((iconWidth / 2), (iconHeigth / 2)),
+			new sogou.maps.Size(iconWidth, iconHeigth));/**/
+		var markerOpt = {
+			disableLabel:false, // 鼠标悬停时不显示Label,即一直都显示Label
+			visible:true, // 显示标记
+			draggable:true, // 可拖动标记
+			id:markerID, // Marker 的编号标识
+			feature:markerID, // 附加信息，因为暂时不知如何获取标注的ID，所以用这个来保存ID
+			label:{visible:true,align:"BOTTOM"},  // Label 的属性
+			icon:image, // 设置标记的图标
+			position : markPoint, // 标记位置，必填
+			title : markTitle, // 标记文本
+			map : map, // 显示标记的地图
+			zIndex:0 // 叠加顺序
+		};
+		
+		var marker = new sogou.maps.Marker(markerOpt);
+
+		return marker;
+	}
+	
+	// 在地图上做标记
+	function markCarMarker(markerID, markerName, longitude, latitude, cargroup) {
+        var marker = myMarker(longitude, latitude, 60, 60,
+	             "http://hiphotos.baidu.com/liuyun885/pic/item/c5e6c04e78f0f7367eec8f4b0a55b319eac413ea.jpg",
+	             markerName, markerID);
+	    sogou.maps.event.addListener(marker, "click", onCarClick);
+	}
+	
+	function onCarClick() {
+	    onMapClick();
+	    
+        if(bIsCustomBrowser)
+		{
+		    curSelectMarkerId = this.id; // 要放在调用C++函数的前面
+		    infowindow.open(map, this);
+			window.external.CB_GetCarInfo(this.id);
+		}
+	}
+	
+	function setCarInfo(number, carbrand, targetCoding, targetName, driver,
+	                     driverphone, adress, cargroup, speed, longitude, laitude) {
+        var info = '<div style="background-color:#DFDFDF"><label>车辆号码 : ' + number + '</label><br />' +
+                     '<label>车辆名称   : ' + carbrand + '</label><br />' +
+                     '<label>终端编码   : ' + targetCoding + '</label><br />' +
+                     '<label>终端名称   : ' + targetName + '</label><br />' +
+                     '<label>驾 驶 员   : ' + driver + '</label><br />' +
+                     '<label>驾驶员电话 : ' + driverphone + '</label><br />' +
+                     '<label>当前地址   : ' + adress + '</label><br />' +
+                     '<label>所属车队   : ' + cargroup + '</label><br />' +
+                     '<label>速度 : ' + speed + '</label><br />' +
+                     '<label>经度 : ' + longitude + '</label><br />' +
+                     '<label>纬度 : ' + laitude + '</label></div>';
+                     
+        infowindow.setContent(info);
+    } 
+	
+	// 通过ID来获取地图上的标注，并同时设置标注信息窗的内容
+	function getMarkerByID(markerID, number, carbrand, targetCoding, targetName, driver,
+	                       driverphone, adress, cargroup, speed, longitude, laitude) {
+        if (!map) { // 如果地图仍未初始化，提示并返回
+            alert("地图未初始化,请确认计算机是否已连接到互联网");
+            return;
+        }
+             
+	    onMapClick();
+	    
+	    var marker = map.getFeatureById(markerID);
+	    if (!marker) { // 如果地图上没有该标志，则创建该标志
+	        markCarMarker(markerID, name, longitude, laitude, cargroup);
+	        marker = map.getFeatureById(markerID);
+	    }
+	    
+        map.setCenter(marker.getPosition()); // 将该标志的位置设为地图中心
+        infowindow.open(map, marker); // 打开信息窗
+        // 设置信息窗的内容
+        setCarInfo(number, carbrand, targetCoding, targetName, driver,
+	               driverphone, adress, cargroup, speed, longitude, laitude);
+	}
+	
+	// 检验是否是自定义浏览器我们只用调用函数
+	// CB_IsOurCustomBrowser看是否可以获得.
+	// 不带()表示属性调用,可以检验函数是否在外部窗口
+	// 返回null表示不是自定义窗口,返回false
+	function fnIsOurCustomBrowser()
+	{
+		if(window.external.CB_IsOurCustomBrowser != null)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	// 用一个变量检验是否是自定义浏览器.
+	bIsCustomBrowser = fnIsOurCustomBrowser();
+	
+	function setMapSize(width, height)
+	{
+	    var map_canvas = document.getElementById("map_canvas");
+	 
+	    map_canvas.style.width = width + "px";
+	    map_canvas.style.height = height + "px";	    
+	}
+    
+</script>
+</head>
+<body onload="initialize()">
+  <div id="map_canvas"></div>
+  <div style="background-color:#DFDFDF" id="mark_canvas">
+    <label>标注点名称:</label><input id="markPointText" type="text" /><br/>
+	<label>标注点经度:</label><input id="markPointX" type="text"><br/>
+	<label>标注点纬度:</label><input id="markPointY" type="text" /><br/>
+	&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<input type="button" onclick="javascript:onMark();" value="确定"/>
+	&nbsp&nbsp<input type="button" onclick="javascript:cancel();" value="取消"/>
+  </div>
+  <div id="menu" class="skin">
+			<div class="menuitems">
+				<a href="javascript:onMarkPoint()";>地名标注</a>
+			</div>
+			<div class="menuitems">
+				<a href="javascript:onSearchByName()";>地图搜索</a>
+			</div>
+			<div class="menuitems">
+				<a href="javascript:onDrawLine()";>绘制路线</a>
+			</div>
+			<div class="menuitems">
+				<a href="javascript:onDrawPolygon()";>绘制区域</a>
+			</div>
+			<div class="menuitems">
+				<a href="javascript:onEndDraw()";>结束绘制</a>
+			</div>
+	</div>
+</body>
+</html>
